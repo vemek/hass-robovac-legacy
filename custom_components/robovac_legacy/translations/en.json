@@ -1,0 +1,56 @@
+{
+  "config": {
+    "abort": {
+      "no_devices": "No Eufy RoboVac legacy models matched (supported: T2103 / 11c with LAN secrets)."
+    },
+    "error": {
+      "cannot_connect": "Unable to reach the Eufy Home API.",
+      "invalid_auth": "Invalid username or password.",
+      "unknown": "Unexpected error validating credentials.",
+      "no_devices_selected": "Pick at least one vacuum to import.",
+      "cannot_refresh": "Eufy did not return a LAN IP—try wiring a static DHCP lease.",
+      "no_change": "Update the LAN IP box or toggle cloud refresh before saving."
+    },
+    "step": {
+      "user": {
+        "title": "Eufy account",
+        "description": "Sign in with the same email/password as the EufyHome app.",
+        "data": {
+          "username": "Email address",
+          "password": "Password"
+        }
+      },
+      "devices": {
+        "title": "Choose vacuums",
+        "description": "Only cleaners matching product code T2103 that ship a LAN secret are listed.",
+        "data": {
+          "device_ids": "RoboVac cleaners"
+        }
+      }
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Vacuum slots",
+        "description": "Select which onboarded vacuum you want to update.",
+        "data": {
+          "selected_vacuum": "Vacuum entry"
+        }
+      },
+      "adjust": {
+        "title": "LAN address",
+        "description": "Re-read the DHCP address from Eufy or paste the current LAN IPv4.",
+        "data": {
+          "refresh_from_cloud": "Ask Eufy cloud for latest LAN IP",
+          "ip_address": "Manual LAN IPv4 override"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Credentials missing from entry data—re-add integration.",
+      "cannot_refresh": "Cloud lookup returned nothing—supply a LAN IP manually.",
+      "no_change": "Provide a LAN IP adjustment or toggle the cloud refresh option."
+    }
+  }
+}

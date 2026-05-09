@@ -1,0 +1,11 @@
+# Full integration tests (pytest + Home Assistant harness).
+#
+# PEP 668 / Nix: `pip` may wrongly treat host packages as satisfying deps without
+# installing wheels into this venv. If imports fail:
+#   pip install --ignore-installed idna requests==2.32.4 pycares==4.11.0 -r requirements-test.txt six
+pytest-homeassistant-custom-component==0.13.263
+robovac==0.0.9
+protobuf>=4,<5
+requests==2.32.4
+# aiohttp pulls aiodns 3.5; pycares 5.x misses type aliases aiodns expects (May 2025).
+pycares==4.11.0

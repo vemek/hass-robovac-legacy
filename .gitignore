@@ -1,0 +1,10 @@
+.env
+.direnv/
+__pycache__/
+*.pyc
+result
+.venv_test/
+.qa/
+.coverage
+.coverage.*
+htmlcov/
