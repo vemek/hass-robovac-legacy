@@ -1,4 +1,4 @@
-"""Eufy RoboVac legacy integration (PyRobovac lakeside protocol)."""
+"""Eufy RoboVac legacy integration (vendored lakeside-derived LAN protobuf)."""
 
 from __future__ import annotations
 

@@ -1,4 +1,4 @@
-"""Data update coordinator for PyRobovac-backed vacuums."""
+"""Data update coordinator for LAN-connected legacy RoboVac vacuums."""
 
 from __future__ import annotations
 
@@ -8,10 +8,9 @@ from datetime import timedelta
 
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
-from robovac import Robovac
-from robovac.robovac import RobovacStatus
 
 from . import const
+from .lan import Robovac, RobovacStatus
 
 _LOGGER = logging.getLogger(__name__)
 

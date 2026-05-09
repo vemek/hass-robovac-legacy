@@ -1,4 +1,4 @@
-"""PyRobovac-backed vacuum entities."""
+"""LAN legacy RoboVac vacuum entities."""
 
 from __future__ import annotations
 
@@ -36,7 +36,7 @@ _DRIVE_MAP = {
 
 
 def _activity_from_status(charger_status: int, error_code: int) -> VacuumActivity:
-    """Map raw PyRobovac status to HA activity (minimal; exposes raw ints as attributes).
+    """Map raw LAN status ints to HA activity (minimal; exposes raw ints as attributes).
 
     Charging-on-dock heuristic: ``charger_status == 1`` (community practice for RoboVac 11c).
     """
@@ -48,7 +48,7 @@ def _activity_from_status(charger_status: int, error_code: int) -> VacuumActivit
 
 
 class RobovacLegacyVacuum(CoordinatorEntity[RobovacLegacyCoordinator], StateVacuumEntity):
-    """Home Assistant vacuum for Eufy 11c (lakeside / PyRobovac)."""
+    """Home Assistant vacuum for Eufy 11c (lakeside-style LAN protobuf)."""
 
     _attr_fan_speed_list = FAN_SPEEDS
     _attr_supported_features = (

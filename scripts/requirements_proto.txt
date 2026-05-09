@@ -1,0 +1,3 @@
+# Optional sanity: import LocalServerInfo_pb2 under the Home Assistant protobuf pin:
+# pip install protobuf==$(curl -sf https://raw.githubusercontent.com/home-assistant/core/dev/homeassistant/package_constraints.txt | awk -F== '/^protobuf==/{print $2}')
+protobuf==6.32.0

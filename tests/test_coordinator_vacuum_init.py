@@ -1,4 +1,4 @@
-"""Coordinator lifecycle, mocked PyRobovac I/O, vacuum helpers, setup/unload."""
+"""Coordinator lifecycle, mocked LAN I/O, vacuum helpers, setup/unload."""
 
 from __future__ import annotations
 
@@ -12,9 +12,8 @@ from homeassistant.const import CONF_IP_ADDRESS
 from homeassistant.helpers import entity_registry as er
 from homeassistant.setup import async_setup_component
 from pytest_homeassistant_custom_component.common import MockConfigEntry
-from robovac.robovac import RobovacStatus
-
 from custom_components import robovac_legacy
+from custom_components.robovac_legacy.lan import RobovacStatus
 from custom_components.robovac_legacy.const import CONF_LOCAL_CODE, CONF_VACS, DOMAIN
 from custom_components.robovac_legacy.coordinator import RobovacLegacyCoordinator, UpdateFailed
 from custom_components.robovac_legacy.vacuum import (

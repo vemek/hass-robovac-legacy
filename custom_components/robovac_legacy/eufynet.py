@@ -1,6 +1,6 @@
 """Eufy Home cloud calls for onboarding (Apache-2.0 payload layout aligned with PyRobovac).
 
-Runtime device control stays on LAN via PyRobovac — no Tuya.
+Runtime device control stays on LAN via vendored protobuf/AES framing — no Tuya.
 """
 
 from __future__ import annotations

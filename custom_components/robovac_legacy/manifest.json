@@ -8,6 +8,6 @@
   "codeowners": ["@vemek"],
   "integration_type": "device",
   "iot_class": "local_polling",
-  "requirements": ["protobuf>=3.19,<4", "robovac==0.0.9"],
+  "requirements": ["pycryptodome>=3.6.6"],
   "version": "0.2.1"
 }
