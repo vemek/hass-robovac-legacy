@@ -9,5 +9,5 @@
   "integration_type": "device",
   "iot_class": "local_polling",
   "requirements": ["robovac==0.0.9"],
-  "version": "0.1.0"
+  "version": "0.2.0"
 }
