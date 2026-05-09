@@ -1,4 +1,4 @@
-"""Configure Eufy RoboVac LAN legacy."""
+"""Configure Eufy RoboVac legacy."""
 
 from __future__ import annotations
 
