@@ -1,9 +1,11 @@
 {
   "domain": "robovac_legacy",
-  "name": "Eufy RoboVac (LAN legacy)",
+  "name": "Eufy RoboVac (legacy)",
   "config_flow": true,
   "dependencies": [],
   "documentation": "https://github.com/vemek/hass-robovac-legacy",
+  "issue_tracker": "https://github.com/vemek/hass-robovac-legacy/issues",
+  "codeowners": ["@vemek"],
   "integration_type": "device",
   "iot_class": "local_polling",
   "requirements": ["robovac==0.0.9"],
