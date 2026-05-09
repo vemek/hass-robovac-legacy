@@ -7,7 +7,7 @@ from datetime import timedelta
 from unittest.mock import AsyncMock, MagicMock, Mock, patch
 
 import pytest
-from homeassistant.components.vacuum import VacuumActivity
+from homeassistant.components.vacuum import VacuumActivity, VacuumEntityFeature
 from homeassistant.const import CONF_IP_ADDRESS
 from homeassistant.helpers import entity_registry as er
 from homeassistant.setup import async_setup_component
@@ -16,6 +16,7 @@ from custom_components import robovac_legacy
 from custom_components.robovac_legacy.lan import RobovacStatus
 from custom_components.robovac_legacy.const import CONF_LOCAL_CODE, CONF_VACS, DOMAIN
 from custom_components.robovac_legacy.coordinator import RobovacLegacyCoordinator, UpdateFailed
+from custom_components.robovac_legacy.sensor import RobovacLegacyBatterySensor
 from custom_components.robovac_legacy.vacuum import (
     FAN_MAX,
     FAN_STANDARD,
@@ -180,8 +181,12 @@ async def test_platform_registers_vacuum_state(hass):  # type: ignore[no-untyped
 
     vac_ids_before = hass.states.async_entity_ids("vacuum")
     assert len(vac_ids_before) == 1
+    sensor_ids_before = hass.states.async_entity_ids("sensor")
+    assert len(sensor_ids_before) == 1
 
-    assert len(er.async_entries_for_config_entry(registry, entry.entry_id)) == 1
+    entity_entries = er.async_entries_for_config_entry(registry, entry.entry_id)
+    assert len(entity_entries) == 2
+    assert {e.domain for e in entity_entries} == {"sensor", "vacuum"}
 
     unload_ok = await hass.config_entries.async_unload(entry.entry_id)
     assert unload_ok
@@ -201,6 +206,8 @@ async def test_vacuum_activity_speed_battery(hass):  # type: ignore[no-untyped-d
         update_interval=timedelta(seconds=1),
     )
     vacuum = RobovacLegacyVacuum(coordinator, vacuum_id="d1", vacuum_config=_vac_conf())
+    battery_sensor = RobovacLegacyBatterySensor(coordinator, vacuum_id="d1", vacuum_config=_vac_conf())
+    assert not (vacuum.supported_features & VacuumEntityFeature.BATTERY)
 
     coordinator.async_set_updated_data(
         _status(
@@ -214,7 +221,21 @@ async def test_vacuum_activity_speed_battery(hass):  # type: ignore[no-untyped-d
             error_code=0,
         )
     )
-    assert vacuum.battery_level is None
+    assert battery_sensor.native_value is None
+    coordinator.async_set_updated_data(
+        _status(
+            charger_status=2,
+            battery_capacity=55,
+            speed=1,
+            mode=9,
+            water_tank_status=7,
+            find_me=1,
+            stop=5,
+            error_code=0,
+        )
+    )
+    assert battery_sensor.native_value == 55
+
     assert vacuum.fan_speed == FAN_MAX
     assert vacuum.activity == VacuumActivity.IDLE
 
@@ -232,6 +253,7 @@ async def test_vacuum_activity_speed_battery(hass):  # type: ignore[no-untyped-d
 
     coordinator.async_set_updated_data(None)  # type: ignore[arg-type]
     assert vacuum.activity is None
+    assert battery_sensor.native_value is None
 
 
 @pytest.mark.asyncio

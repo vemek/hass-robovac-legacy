@@ -59,7 +59,6 @@ class RobovacLegacyVacuum(CoordinatorEntity[RobovacLegacyCoordinator], StateVacu
         | VacuumEntityFeature.RETURN_HOME
         | VacuumEntityFeature.FAN_SPEED
         | VacuumEntityFeature.CLEAN_SPOT
-        | VacuumEntityFeature.BATTERY
         | VacuumEntityFeature.LOCATE
         | VacuumEntityFeature.SEND_COMMAND
     )
@@ -96,17 +95,6 @@ class RobovacLegacyVacuum(CoordinatorEntity[RobovacLegacyCoordinator], StateVacu
         """Return readable name."""
         name = self._vacuum_config.get(CONF_NAME)
         return name if isinstance(name, str) and name else None
-
-    @property
-    def battery_level(self) -> int | None:
-        """Approximate percentage from status packet."""
-        st = self.coordinator.data
-        if not st:
-            return None
-        try:
-            return int(st.battery_capacity)
-        except (TypeError, ValueError):
-            return None
 
     @property
     def activity(self) -> VacuumActivity | None:

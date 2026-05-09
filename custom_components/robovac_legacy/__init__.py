@@ -11,7 +11,7 @@ from homeassistant.core import HomeAssistant
 from .const import CONF_LOCAL_CODE, CONF_VACS, DEFAULT_SCAN_INTERVAL, DOMAIN
 from .coordinator import RobovacLegacyCoordinator
 
-PLATFORMS: list[str] = [Platform.VACUUM]
+PLATFORMS: list[str] = [Platform.SENSOR, Platform.VACUUM]
 
 
 async def async_setup(hass: HomeAssistant, _config: dict) -> bool:
@@ -21,7 +21,7 @@ async def async_setup(hass: HomeAssistant, _config: dict) -> bool:
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
-    """Prepare coordinators and vacuum platform."""
+    """Prepare coordinators and platforms."""
     interval = timedelta(seconds=DEFAULT_SCAN_INTERVAL)
     coordinators: dict[str, RobovacLegacyCoordinator] = {}
 
