@@ -10,6 +10,8 @@ Local control previously relied on archived **[PyRobovac](https://pypi.org/proje
 - **`google.protobuf`** is supplied by Home Assistant Core (`LocalServerMessage` stubs ship with this repo).
 - Cloud onboarding lists models advertising **sixteen-character LAN secrets** for the protobuf protocol.
 
+To run [`scripts/dump_robovac_lan.py`](scripts/dump_robovac_lan.py) outside Home Assistant’s interpreter, use **direnv** (see [`.envrc`](.envrc): `use flake` then **`layout python3`**). That puts a venv under **`.direnv/python-*`** on your `PATH`; install PyPI deps with **`pip install -r requirements-dev.txt`** when needed. Plain **`nix develop`** only supplies the Nix **`python3`** binary—no project venv and no **`pip`** on `PATH` until you use direnv or another venv workflow.
+
 ### Maintainer notes: protobuf stubs
 
 Protocol sources live under `custom_components/robovac_legacy/lan/proto/LocalServerInfo.proto`.

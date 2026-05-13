@@ -1,0 +1,5 @@
+# Dev-only: run scripts/dump_robovac_lan.py outside Home Assistant.
+# Keep pycryptodome in sync with custom_components/robovac_legacy/manifest.json "requirements".
+pycryptodome>=3.6.6
+requests>=2.28.0
+protobuf>=4.21.0
