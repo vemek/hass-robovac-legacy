@@ -76,6 +76,38 @@ class LegacyCandidatesTests(unittest.TestCase):
         ]
         self.assertEqual(EUFY.legacy_candidates_from_items(bad, LEGACY_CODES), [])
 
+    def test_none_product_filter_includes_non_t2103(self) -> None:
+        items = [
+            _device(
+                dev_id="x1",
+                alias="Other model",
+                product_code="T2276",
+                lan_ip="10.0.0.5",
+                code="ABCDEFGHIJKLMNOP",
+            )
+        ]
+        cands = EUFY.legacy_candidates_from_items(items, None)
+        self.assertEqual(len(cands), 1)
+        self.assertEqual(cands[0].device_id, "x1")
+        self.assertEqual(cands[0].product_code, "T2276")
+
+    def test_none_product_filter_allows_missing_product_code(self) -> None:
+        items = [
+            {
+                "device": {
+                    "id": "nopc",
+                    "alias_name": "Mystery",
+                    "name": "",
+                    "local_code": "1234567890123456",
+                    "wifi": {"lan_ip_addr": "192.168.2.2"},
+                }
+            }
+        ]
+        cands = EUFY.legacy_candidates_from_items(items, None)
+        self.assertEqual(len(cands), 1)
+        self.assertEqual(cands[0].product_code, "")
+        self.assertEqual(cands[0].local_code, "1234567890123456")
+
     def test_requires_valid_local_secret_and_ip(self) -> None:
         missing_code = [_device(dev_id="a", alias="A", product_code="T2103", lan_ip="1.2.3.4", code="")]
         missing_ip = [_device(dev_id="a", alias="A", product_code="T2103", lan_ip="", code="ABCDEFGHIJKLMNOP")]

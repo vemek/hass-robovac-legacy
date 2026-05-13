@@ -7,6 +7,7 @@ from unittest.mock import MagicMock, patch
 from custom_components.robovac_legacy.const import SUPPORTED_LEGACY_PRODUCT_CODES
 from custom_components.robovac_legacy.eufynet import (
     EufyLegacyError,
+    fetch_all_local_candidates,
     fetch_legacy_candidates,
     refresh_lan_ip,
 )
@@ -37,6 +38,39 @@ def _candidate_item(device_id: str = "dev1") -> dict:
             "wifi": {"mac": "aa-bb-cc-dd-ee-ff", "lan_ip_addr": "192.168.1.50"},
         }
     }
+
+
+def _t2276_item(device_id: str = "dev2276") -> dict:
+    return {
+        "device": {
+            "id": device_id,
+            "alias_name": "Living",
+            "name": "Other vac",
+            "product": {"product_code": "T2276"},
+            "local_code": "BBBBBBBBBBBBBBBB",
+            "wifi": {"mac": "11-22-33-44-55-66", "lan_ip_addr": "192.168.1.60"},
+        }
+    }
+
+
+def test_fetch_all_local_candidates_includes_non_t2103() -> None:
+    login = _login_ok_token()
+    devices = _devices_ok([_candidate_item(), _t2276_item()])
+
+    with patch(
+        "custom_components.robovac_legacy.eufynet.requests.post",
+        return_value=login,
+    ), patch(
+        "custom_components.robovac_legacy.eufynet.requests.get",
+        return_value=devices,
+    ):
+        rows = fetch_all_local_candidates("a@b.c", "secret")
+
+    ids = {r.device_id for r in rows}
+    assert ids == {"dev1", "dev2276"}
+    t2276 = next(r for r in rows if r.device_id == "dev2276")
+    assert t2276.product_code == "T2276"
+    assert t2276.local_code == "BBBBBBBBBBBBBBBB"
 
 
 def test_fetch_candidates_success() -> None:

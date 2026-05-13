@@ -89,7 +89,7 @@ class Robovac:
             pass
         self._sock = None
 
-    def get_status(self) -> RobovacStatus:
+    def get_status_with_raw(self) -> tuple[RobovacStatus, bytes]:
         message = self._build_get_device_status_user_data_message()
         robovac_response = self._send_packet(message, expect_reply=True)
         if robovac_response is None:
@@ -97,8 +97,10 @@ class Robovac:
 
         usr_data = robovac_response.c.usr_data or b""
         received_status_ints = list(usr_data)
+        if len(received_status_ints) < 14:
+            raise OSError(f"status usr_data too short ({len(usr_data)} bytes, need >= 14)")
 
-        return RobovacStatus(
+        status = RobovacStatus(
             find_me=1 if received_status_ints[6] & 4 > 0 else 0,
             water_tank_status=1 if received_status_ints[6] & 2 > 0 else 0,
             mode=received_status_ints[1] & 255,
@@ -108,6 +110,10 @@ class Robovac:
             error_code=received_status_ints[12] & 255,
             stop=received_status_ints[13] & 255,
         )
+        return status, usr_data
+
+    def get_status(self) -> RobovacStatus:
+        return self.get_status_with_raw()[0]
 
     def start_auto_clean(self) -> None:
         payload = build_robovac_command(RobovacModes.WORK, RobovacCommands.AUTO_CLEAN)

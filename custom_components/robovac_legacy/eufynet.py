@@ -50,13 +50,59 @@ def _extract_product_code(device: dict[str, Any]) -> str | None:
     return None
 
 
+def _login_and_device_items(email: str, password: str, *, timeout: float) -> list[Any]:
+    """POST login, GET devices-and-groups; return raw ``items`` or raise ``EufyLegacyError``."""
+
+    payload = {
+        "client_id": "eufyhome-app",
+        "client_Secret": "GQCpr9dSp3uQpsOMgJ4xQ",
+        "email": email,
+        "password": password,
+    }
+    login = requests.post(LOGIN_URL, json=payload, timeout=timeout)
+    if login.status_code != 200:
+        _LOGGER.warning("Eufy login HTTP %s", login.status_code)
+        raise EufyLegacyError("cannot_connect")
+
+    try:
+        body = login.json()
+    except ValueError:
+        raise EufyLegacyError("cannot_connect") from None
+
+    if not isinstance(body, dict) or "access_token" not in body:
+        _LOGGER.warning("Eufy login JSON missing token")
+        raise EufyLegacyError("invalid_auth")
+
+    headers = {"token": body["access_token"], "category": "Home"}
+    devices_rsp = requests.get(DEVICES_GROUPS_URL, headers=headers, timeout=timeout)
+    if devices_rsp.status_code != 200:
+        _LOGGER.warning("Eufy devices list HTTP %s", devices_rsp.status_code)
+        raise EufyLegacyError("cannot_connect")
+
+    try:
+        lst = devices_rsp.json()
+    except ValueError:
+        raise EufyLegacyError("cannot_connect") from None
+
+    raw_items = lst.get("items") if isinstance(lst, dict) else None
+    if not isinstance(raw_items, list):
+        _LOGGER.warning("Eufy devices JSON had no usable items")
+        raise EufyLegacyError("cannot_connect")
+
+    return raw_items
+
+
 def legacy_candidates_from_items(
     items: list[Any],
-    supported_product_codes: frozenset[str],
+    supported_product_codes: frozenset[str] | None,
 ) -> list[LegacyVacuumCandidate]:
     """Build picker rows; skip malformed entries silently.
 
     Mirrors structure used by PyRobovac ``get_local_code``.
+
+    When ``supported_product_codes`` is ``None``, keep every device that has a
+    16-char ``local_code`` and non-empty ``lan_ip_addr`` (debug discovery); the
+    product code may be empty if the API omits it.
     """
     out: list[LegacyVacuumCandidate] = []
     for item in items:
@@ -76,9 +122,13 @@ def legacy_candidates_from_items(
         if not lan_ip or not local_code or len(local_code) != 16:
             continue
 
-        product_code = _extract_product_code(device)
-        if not product_code or product_code not in supported_product_codes:
-            continue
+        product_code_raw = _extract_product_code(device)
+        if supported_product_codes is not None:
+            if not product_code_raw or product_code_raw not in supported_product_codes:
+                continue
+            product_code = product_code_raw
+        else:
+            product_code = product_code_raw or ""
 
         dev_id_raw = device.get("id") or device.get("device_sn")
         if not isinstance(dev_id_raw, str) or not dev_id_raw.strip():
@@ -126,43 +176,21 @@ def fetch_legacy_candidates(
     timeout: float = 30.0,
 ) -> list[LegacyVacuumCandidate]:
     """Log in once, list ``devices-and-groups``, return supported legacy LAN vacuums."""
-    payload = {
-        "client_id": "eufyhome-app",
-        "client_Secret": "GQCpr9dSp3uQpsOMgJ4xQ",
-        "email": email,
-        "password": password,
-    }
-    login = requests.post(LOGIN_URL, json=payload, timeout=timeout)
-    if login.status_code != 200:
-        _LOGGER.warning("Eufy login HTTP %s", login.status_code)
-        raise EufyLegacyError("cannot_connect")
 
-    try:
-        body = login.json()
-    except ValueError:
-        raise EufyLegacyError("cannot_connect") from None
-
-    if not isinstance(body, dict) or "access_token" not in body:
-        _LOGGER.warning("Eufy login JSON missing token")
-        raise EufyLegacyError("invalid_auth")
-
-    headers = {"token": body["access_token"], "category": "Home"}
-    devices_rsp = requests.get(DEVICES_GROUPS_URL, headers=headers, timeout=timeout)
-    if devices_rsp.status_code != 200:
-        _LOGGER.warning("Eufy devices list HTTP %s", devices_rsp.status_code)
-        raise EufyLegacyError("cannot_connect")
-
-    try:
-        lst = devices_rsp.json()
-    except ValueError:
-        raise EufyLegacyError("cannot_connect") from None
-
-    raw_items = lst.get("items") if isinstance(lst, dict) else None
-    if not isinstance(raw_items, list):
-        _LOGGER.warning("Eufy devices JSON had no usable items")
-        raise EufyLegacyError("cannot_connect")
-
+    raw_items = _login_and_device_items(email, password, timeout=timeout)
     return legacy_candidates_from_items(raw_items, supported_product_codes)
+
+
+def fetch_all_local_candidates(
+    email: str,
+    password: str,
+    *,
+    timeout: float = 30.0,
+) -> list[LegacyVacuumCandidate]:
+    """Same HTTP flow as ``fetch_legacy_candidates`` but list any LAN-capable device (no product filter)."""
+
+    raw_items = _login_and_device_items(email, password, timeout=timeout)
+    return legacy_candidates_from_items(raw_items, None)
 
 
 def refresh_lan_ip(
