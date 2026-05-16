@@ -1,0 +1,54 @@
+# Docked, fully charged
+  battery_percent:     100
+  mode (raw byte):     3
+  speed (raw byte):    0  (HA fan: 1=max, else standard)
+  charger_status:      1
+  error_code:          0
+  stop (raw byte):     1
+  water_tank_status:   0
+  find_me flag:        0
+  HA activity hint:    DOCKED (heuristic: charger_status == 1)
+
+# Undocked, fully charged
+  battery_percent:     99
+  mode (raw byte):     0
+  speed (raw byte):    0  (HA fan: 1=max, else standard)
+  charger_status:      0
+  error_code:          0
+  stop (raw byte):     1
+  water_tank_status:   0
+  find_me flag:        0
+  HA activity hint:    IDLE (heuristic: not charging, no error)
+
+# No battery report, but fully charged and undocked
+  battery_percent:     0
+  mode (raw byte):     240
+  speed (raw byte):    0  (HA fan: 1=max, else standard)
+  charger_status:      0
+  error_code:          0
+  stop (raw byte):     0
+  water_tank_status:   0
+  find_me flag:        0
+  HA activity hint:    IDLE (heuristic: not charging, no error)
+
+# Running
+  battery_percent:     99
+  mode (raw byte):     2
+  speed (raw byte):    0  (HA fan: 1=max, else standard)
+  charger_status:      0
+  error_code:          0
+  stop (raw byte):     0
+  water_tank_status:   0
+  find_me flag:        0
+  HA activity hint:    IDLE (heuristic: not charging, no error)
+
+# Heading home
+  battery_percent:     96
+  mode (raw byte):     3
+  speed (raw byte):    0  (HA fan: 1=max, else standard)
+  charger_status:      0
+  error_code:          0
+  stop (raw byte):     0
+  water_tank_status:   0
+  find_me flag:        0
+  HA activity hint:    IDLE (heuristic: not charging, no error)

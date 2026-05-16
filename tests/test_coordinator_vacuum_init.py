@@ -14,6 +14,7 @@ from homeassistant.setup import async_setup_component
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 from custom_components import robovac_legacy
 from custom_components.robovac_legacy.lan import RobovacStatus
+from custom_components.robovac_legacy.status_inference import MODE_SLEEP
 from custom_components.robovac_legacy.const import CONF_LOCAL_CODE, CONF_VACS, DOMAIN
 from custom_components.robovac_legacy.coordinator import RobovacLegacyCoordinator, UpdateFailed
 from custom_components.robovac_legacy.sensor import RobovacLegacyBatterySensor
@@ -123,6 +124,34 @@ async def test_coordinator_wraps_executor_errors(  # type: ignore[no-untyped-def
 
     assert isinstance(coordinator.last_exception, UpdateFailed)
     assert msg in str(coordinator.last_exception)
+
+
+@pytest.mark.asyncio
+async def test_coordinator_battery_hold_after_poll(hass):  # type: ignore[no-untyped-def]
+    coordinator = RobovacLegacyCoordinator(
+        hass,
+        vacuum_id="d1",
+        lan_ip="192.168.1.2",
+        local_code="A" * 16,
+        update_interval=timedelta(seconds=1),
+    )
+    battery_sensor = RobovacLegacyBatterySensor(coordinator, vacuum_id="d1", vacuum_config=_vac_conf())
+    sequence = [
+        _status(battery_capacity=99),
+        _status(mode=MODE_SLEEP, battery_capacity=0, stop=0, charger_status=0),
+    ]
+
+    def next_status() -> RobovacStatus:
+        return sequence.pop(0)
+
+    with patch(
+        "custom_components.robovac_legacy.coordinator.Robovac",
+        return_value=_make_ro_mock(next_status),
+    ):
+        await coordinator.async_refresh()
+        assert battery_sensor.native_value == 99
+        await coordinator.async_refresh()
+        assert battery_sensor.native_value == 99
 
 
 @pytest.mark.asyncio
@@ -244,6 +273,20 @@ async def test_vacuum_activity_speed_battery(hass):  # type: ignore[no-untyped-d
     assert attrs["robovac_water_tank"] == 7
     assert attrs["robovac_find_me_flag"] == 1
     assert attrs["robovac_stop_flag"] == 5
+    assert attrs["robovac_battery_reported"] is True
+
+    coordinator.async_set_updated_data(_status(mode=2, stop=0, charger_status=0))
+    assert vacuum.activity == VacuumActivity.CLEANING
+
+    coordinator.async_set_updated_data(_status(mode=3, stop=0, charger_status=0))
+    assert vacuum.activity == VacuumActivity.RETURNING
+
+    coordinator._last_battery_percent = 55
+    coordinator.async_set_updated_data(
+        _status(mode=MODE_SLEEP, battery_capacity=0, stop=0, charger_status=0)
+    )
+    assert battery_sensor.native_value == 55
+    assert vacuum.extra_state_attributes["robovac_battery_reported"] is False
 
     coordinator.async_set_updated_data(_status(error_code=4, charger_status=1))
     assert vacuum.activity == VacuumActivity.ERROR

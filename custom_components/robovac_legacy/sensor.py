@@ -57,16 +57,7 @@ class RobovacLegacyBatterySensor(CoordinatorEntity[RobovacLegacyCoordinator], Se
     def native_value(self) -> int | None:
         """Return battery percentage parsed from telemetry."""
 
-        data = self.coordinator.data
-        if not data:
-            return None
-        try:
-            pct = int(data.battery_capacity)
-        except (TypeError, ValueError):
-            return None
-        if not 0 <= pct <= 100:
-            return None
-        return pct
+        return self.coordinator.battery_percent
 
 
 async def async_setup_entry(

@@ -56,14 +56,32 @@ ENV_LOCAL_CODE = "ROBOVAC_LOCAL_CODE"
 ENV_LAN_IP = "ROBOVAC_LAN_IP"
 
 
-def _activity_hint(charger_status: int, error_code: int) -> str:
-    """Mirror ``vacuum._activity_from_status`` without importing homeassistant."""
+def _activity_hint(status) -> str:
+    """Mirror ``status_inference.infer_activity_key`` without Home Assistant."""
 
-    if error_code:
+    from custom_components.robovac_legacy.status_inference import (  # noqa: PLC0415
+        ACTIVITY_CLEANING,
+        ACTIVITY_DOCKED,
+        ACTIVITY_ERROR,
+        ACTIVITY_IDLE,
+        ACTIVITY_RETURNING,
+        MODE_CLEANING,
+        MODE_GO_HOME,
+        infer_activity_key,
+    )
+
+    key = infer_activity_key(status)
+    if key == ACTIVITY_ERROR:
         return "ERROR (non-zero robovac_error_code)"
-    if charger_status == 1:
-        return "DOCKED (heuristic: charger_status == 1)"
-    return "IDLE (heuristic: not charging, no error)"
+    if key == ACTIVITY_DOCKED:
+        return "DOCKED (charger_status == 1)"
+    if key == ACTIVITY_CLEANING:
+        return f"CLEANING (mode == {MODE_CLEANING}, stop == 0)"
+    if key == ACTIVITY_RETURNING:
+        return f"RETURNING (mode == {MODE_GO_HOME}, charger_status == 0)"
+    if key == ACTIVITY_IDLE:
+        return "IDLE"
+    return key.upper()
 
 
 def _hex_spaced(data: bytes) -> str:
@@ -80,8 +98,19 @@ def _print_lan_dump(ip: str, local_code: str, *, port: int) -> None:
     finally:
         rv.disconnect()
 
+    from custom_components.robovac_legacy.status_inference import (  # noqa: PLC0415
+        effective_battery_percent,
+        is_battery_report_valid,
+    )
+
+    effective_battery = effective_battery_percent(status, None)
+    battery_label = status.battery_capacity
+    if effective_battery is not None and int(status.battery_capacity) != effective_battery:
+        battery_label = f"{status.battery_capacity} (effective: {effective_battery})"
+
     print("\n--- LAN status (parsed) ---")
-    print(f"  battery_percent:     {status.battery_capacity}")
+    print(f"  battery_percent:     {battery_label}")
+    print(f"  battery_reported:    {is_battery_report_valid(status)}")
     print(f"  mode (raw byte):     {status.mode}")
     print(f"  speed (raw byte):    {status.speed}  (HA fan: 1=max, else standard)")
     print(f"  charger_status:      {status.charger_status}")
@@ -89,7 +118,7 @@ def _print_lan_dump(ip: str, local_code: str, *, port: int) -> None:
     print(f"  stop (raw byte):     {status.stop}")
     print(f"  water_tank_status:   {status.water_tank_status}")
     print(f"  find_me flag:        {status.find_me}")
-    print(f"  HA activity hint:    {_activity_hint(status.charger_status, int(status.error_code))}")
+    print(f"  HA activity hint:    {_activity_hint(status)}")
 
     print("\n--- LAN status (raw usr_data) ---")
     print(f"  length: {len(usr_data)} bytes")

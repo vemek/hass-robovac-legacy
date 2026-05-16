@@ -11,6 +11,7 @@ from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, Upda
 
 from . import const
 from .lan import Robovac, RobovacStatus
+from .status_inference import is_battery_report_valid
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -29,6 +30,7 @@ class RobovacLegacyCoordinator(DataUpdateCoordinator[RobovacStatus]):
     ) -> None:
         self._lan_ip = lan_ip
         self._local_code = local_code
+        self._last_battery_percent: int | None = None
         super().__init__(
             hass,
             _LOGGER,
@@ -46,13 +48,27 @@ class RobovacLegacyCoordinator(DataUpdateCoordinator[RobovacStatus]):
                 rv.disconnect()
 
         try:
-            return await self.hass.async_add_executor_job(poll)
+            status = await self.hass.async_add_executor_job(poll)
         except TimeoutError as err:
             raise UpdateFailed(str(err)) from err
         except OSError as err:
             raise UpdateFailed(str(err)) from err
         except Exception as err:  # noqa: BLE001
             raise UpdateFailed(str(err)) from err
+
+        if is_battery_report_valid(status):
+            self._last_battery_percent = int(status.battery_capacity)
+        return status
+
+    @property
+    def battery_percent(self) -> int | None:
+        """Battery % for entities: live reading or last valid value while in sleep."""
+
+        if not self.data:
+            return None
+        if is_battery_report_valid(self.data):
+            return int(self.data.battery_capacity)
+        return self._last_battery_percent
 
     async def async_exec(self, actor: Callable[[Robovac], None]) -> None:
         """Run ``actor(robovac)`` on executor with fresh connect/disconnect."""

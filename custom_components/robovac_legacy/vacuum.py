@@ -20,6 +20,7 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import CONF_VACS, DOMAIN
 from .coordinator import RobovacLegacyCoordinator
+from .status_inference import infer_activity, is_battery_report_valid
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -33,18 +34,6 @@ _DRIVE_MAP = {
     "left": lambda r: r.go_left(),
     "right": lambda r: r.go_right(),
 }
-
-
-def _activity_from_status(charger_status: int, error_code: int) -> VacuumActivity:
-    """Map raw LAN status ints to HA activity (minimal; exposes raw ints as attributes).
-
-    Charging-on-dock heuristic: ``charger_status == 1`` (community practice for RoboVac 11c).
-    """
-    if error_code:
-        return VacuumActivity.ERROR
-    if charger_status == 1:
-        return VacuumActivity.DOCKED
-    return VacuumActivity.IDLE
 
 
 class RobovacLegacyVacuum(CoordinatorEntity[RobovacLegacyCoordinator], StateVacuumEntity):
@@ -101,8 +90,7 @@ class RobovacLegacyVacuum(CoordinatorEntity[RobovacLegacyCoordinator], StateVacu
         """Return inferred activity."""
         if not self.coordinator.data:
             return None
-        st = self.coordinator.data
-        return _activity_from_status(st.charger_status, int(st.error_code))
+        return infer_activity(self.coordinator.data)
 
     @property
     def fan_speed(self) -> str | None:
@@ -130,6 +118,7 @@ class RobovacLegacyVacuum(CoordinatorEntity[RobovacLegacyCoordinator], StateVacu
             attrs["robovac_find_me_flag"] = int(st.find_me)
             attrs["robovac_stop_flag"] = int(st.stop)
             attrs["robovac_error_code"] = int(st.error_code)
+            attrs["robovac_battery_reported"] = is_battery_report_valid(st)
         return attrs
 
     async def async_start(self) -> None:
